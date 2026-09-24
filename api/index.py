@@ -8,7 +8,9 @@ from fastapi import Query
 import urllib.request, csv as _csv
 from fastapi import Query
 from fastapi import Query
-from .students_data import STUDENTS
+import os, ast
+
+
 
 app = FastAPI()
 
@@ -83,6 +85,9 @@ def code_interpreter(req: CodeRequest):
     return {"error": error_lines(res["output"]), "result": res["output"]}
 
 _CSV_URL = "https://raw.githubusercontent.com/Avi7075/tds-latency/main/api/q-fastapi.csv"
+
+_path = os.path.join(os.path.dirname(__file__), "students_data.py")
+STUDENTS = ast.literal_eval(open(_path).read().split("=", 1)[1].strip())
 
 def _load():
     text = urllib.request.urlopen(_CSV_URL).read().decode("utf-8-sig")
