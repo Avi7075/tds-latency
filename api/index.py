@@ -7,6 +7,8 @@ import csv, urllib.request
 from fastapi import Query
 import urllib.request, csv as _csv
 from fastapi import Query
+from fastapi import Query
+from .students_data import STUDENTS
 
 app = FastAPI()
 
@@ -97,7 +99,7 @@ def get_all_students():
 
 @app.get("/api")
 def get_students(class_: list[str] | None = Query(None, alias="class")):
-    students = get_all_students()
+    students = [{"studentId": i, "class": c} for i, c in STUDENTS]
     if not class_:
         return {"students": students}
     wanted = set(class_)
