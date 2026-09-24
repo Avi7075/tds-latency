@@ -5,6 +5,8 @@ from contextlib import redirect_stdout
 from pydantic import BaseModel
 import csv, urllib.request
 from fastapi import Query
+import urllib.request, csv as _csv
+from fastapi import Query
 
 app = FastAPI()
 
@@ -78,20 +80,24 @@ def code_interpreter(req: CodeRequest):
         return {"error": [], "result": res["output"]}
     return {"error": error_lines(res["output"]), "result": res["output"]}
 
-CSV_URL = "https://raw.githubusercontent.com/Avi7075/tds-latency/main/api/q-fastapi.csv"
-_students = None
+_CSV_URL = "https://raw.githubusercontent.com/Avi7075/tds-latency/main/api/q-fastapi.csv"
 
-def load_students():
-    global _students
-    if _students is None:
-        text = urllib.request.urlopen(CSV_URL).read().decode("utf-8-sig")
-        _students = [{"studentId": int(r["studentId"]), "class": r["class"]}
-                     for r in csv.DictReader(text.splitlines())]
-    return _students
+def _load():
+    text = urllib.request.urlopen(_CSV_URL).read().decode("utf-8-sig")
+    return [{"studentId": int(r["studentId"]), "class": r["class"]}
+            for r in _csv.DictReader(text.splitlines())]
+
+_STUDENTS = None
+
+def get_all_students():
+    global _STUDENTS
+    if _STUDENTS is None:
+        _STUDENTS = _load()
+    return _STUDENTS
 
 @app.get("/api")
 def get_students(class_: list[str] | None = Query(None, alias="class")):
-    students = load_students()
+    students = get_all_students()
     if not class_:
         return {"students": students}
     wanted = set(class_)
