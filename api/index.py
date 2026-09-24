@@ -3,6 +3,8 @@ from fastapi.responses import Response
 import io, re, traceback
 from contextlib import redirect_stdout
 from pydantic import BaseModel
+import csv, urllib.request
+from fastapi import Query
 
 app = FastAPI()
 
@@ -75,3 +77,22 @@ def code_interpreter(req: CodeRequest):
     if res["success"]:
         return {"error": [], "result": res["output"]}
     return {"error": error_lines(res["output"]), "result": res["output"]}
+
+CSV_URL = "https://raw.githubusercontent.com/Avi7075/tds-latency/main/q-fastapi.csv"
+_students = None
+
+def load_students():
+    global _students
+    if _students is None:
+        text = urllib.request.urlopen(CSV_URL).read().decode("utf-8-sig")
+        _students = [{"studentId": int(r["studentId"]), "class": r["class"]}
+                     for r in csv.DictReader(text.splitlines())]
+    return _students
+
+@app.get("/api")
+def get_students(class_: list[str] | None = Query(None, alias="class")):
+    students = load_students()
+    if not class_:
+        return {"students": students}
+    wanted = set(class_)
+    return {"students": [s for s in students if s["class"] in wanted]}
