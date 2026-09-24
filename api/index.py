@@ -1,5 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import Response
+import io, re, traceback
+from contextlib import redirect_stdout
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -49,3 +52,26 @@ async def latency(request: Request):
             "breaches": sum(1 for x in lat if x > threshold),
         })
     return {"regions": out}
+
+class CodeRequest(BaseModel):
+    code: str
+
+def execute_python_code(code: str) -> dict:
+    buf = io.StringIO()
+    try:
+        with redirect_stdout(buf):
+            exec(code, {"__name__": "__main__"})
+        return {"success": True, "output": buf.getvalue()}
+    except BaseException:
+        return {"success": False, "output": traceback.format_exc()}
+
+def error_lines(tb: str) -> list[int]:
+    lines = re.findall(r'File "<string>", line (\d+)', tb)
+    return [int(lines[-1])] if lines else []
+
+@app.post("/code-interpreter")
+def code_interpreter(req: CodeRequest):
+    res = execute_python_code(req.code)
+    if res["success"]:
+        return {"error": [], "result": res["output"]}
+    return {"error": error_lines(res["output"]), "result": res["output"]}
