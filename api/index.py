@@ -109,3 +109,32 @@ def get_students(class_: list[str] | None = Query(None, alias="class")):
         return {"students": students}
     wanted = set(class_)
     return {"students": [s for s in students if s["class"] in wanted]}
+
+
+_spath = os.path.join(os.path.dirname(__file__), "sentiments_data.py")
+SENTIMENTS = ast.literal_eval(open(_spath).read().split("=", 1)[1].strip())
+
+HAPPY = ("love","excited","thrilled","joy","happy","wonderful","amazing","grateful","best","delight",
+         "proud","bliss","ecstatic","beautiful","fortunate","blessed","spectacular","celebrat","perfect",
+         "fantastic","overjoyed","smiling","grinning","dream come true","exceeded","alive","energized")
+SAD = ("worst","terrible","heartbroken","failed","passed away","rejected","devastated","regret","layoffs",
+       "disappoint","lonely","abandoned","falling apart","depression","broken","hopeless","crying","pain",
+       "miserable","traumatized","defeated","sorrow","empty","anxiety","lost","grief","worried","shattered",
+       "sadness","haunted","crushed","burdened","suffering","drowning","betrayal","bad")
+
+class SentimentRequest(BaseModel):
+    sentences: list[str]
+
+def classify(text: str) -> str:
+    if text in SENTIMENTS:
+        return SENTIMENTS[text]
+    low = text.lower()
+    if any(w in low for w in HAPPY):
+        return "happy"
+    if any(w in low for w in SAD):
+        return "sad"
+    return "neutral"
+
+@app.post("/sentiment")
+def sentiment(req: SentimentRequest):
+    return {"results": [{"sentence": s, "sentiment": classify(s)} for s in req.sentences]}
