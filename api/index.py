@@ -78,7 +78,7 @@ def code_interpreter(req: CodeRequest):
         return {"error": [], "result": res["output"]}
     return {"error": error_lines(res["output"]), "result": res["output"]}
 
-CSV_URL = "https://raw.githubusercontent.com/Avi7075/tds-latency/main/q-fastapi.csv"
+CSV_URL = "https://raw.githubusercontent.com/Avi7075/tds-latency/main/api/q-fastapi.csv"
 _students = None
 
 def load_students():
